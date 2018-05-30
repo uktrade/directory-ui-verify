@@ -1,10 +1,24 @@
 import json
 from urllib.parse import urljoin, urlencode
+
 import requests
+from directory_api_client.client import DirectoryAPIClient
+from directory_ch_client.client import DirectoryCHClient
 
 from django.conf import settings
 
 from core import constants, helpers
+
+
+companies_house_client = DirectoryCHClient(
+    base_url=settings.INTERNAL_CH_BASE_URL,
+    api_key=settings.INTERNAL_CH_API_KEY
+)
+
+api_client = DirectoryAPIClient(
+    base_url=settings.API_CLIENT_BASE_URL,
+    api_key=settings.API_SIGNATURE_SECRET,
+)
 
 
 def generate_gov_verify_saml_request():
@@ -66,7 +80,12 @@ def configure_compliance_tool_response():
             settings.VERIFY_SERVICE_PROVIDER_SAML_SIGNING_KEY
         ),
         'userAccountCreationAttributes': [
-            'FIRST_NAME', 'SURNAME', 'DATE_OF_BIRTH'
+            'FIRST_NAME',
+            'FIRST_NAME_VERIFIED',
+            'SURNAME',
+            'SURNAME_VERIFIED',
+            'DATE_OF_BIRTH',
+            'DATE_OF_BIRTH_VERIFIED'
         ]
     }
     response = requests.post(
@@ -75,3 +94,7 @@ def configure_compliance_tool_response():
         headers={'Content-Type': 'application/json'}
     )
     response.raise_for_status()
+
+
+def get_session_request_id(request):
+    return request.session[constants.SAML_REQUEST_ID_KEY]
