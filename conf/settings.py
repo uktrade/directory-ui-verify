@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     "django.contrib.sitemaps",
     "rest_framework",
     "core",
+    "eligibility",
     "directory_healthcheck",
     "health_check",
     "export_elements",
@@ -90,8 +91,12 @@ TEMPLATES = [
 WSGI_APPLICATION = 'conf.wsgi.application'
 
 CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": os.getenv('REDIS_CACHE_URL'),
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
     }
 }
 
@@ -118,6 +123,11 @@ if DEBUG:
                 'level': 'DEBUG',
                 'class': 'logging.StreamHandler',
             },
+            'csv_match_logger': {
+                'level': 'DEBUG',
+                'class': 'logging.FileHandler',
+                'filename': os.path.join(BASE_DIR, 'match_logger.csv'),
+            },
         },
         'loggers': {
             'django.request': {
@@ -133,6 +143,11 @@ if DEBUG:
             'requests': {
                 'handlers': ['console'],
                 'level': 'WARNING',
+                'propagate': False,
+            },
+            'csv_match_logger': {
+                'handlers': ['csv_match_logger'],
+                'level': 'INFO',
                 'propagate': False,
             },
             '': {
@@ -179,6 +194,11 @@ else:
             },
             'sentry.errors': {
                 'level': 'DEBUG',
+                'handlers': ['console'],
+                'propagate': False,
+            },
+            'csv_match_logger': {
+                'level': 'INFO',
                 'handlers': ['console'],
                 'propagate': False,
             },
@@ -274,3 +294,18 @@ COMPLIANCE_TOOL_CONSUMER_SERVICE_URL = os.getenv(
 FEATURE_GOV_VERIFY_COMPLIANCE_TOOL_ENABLED = os.getenv(
     'FEATURE_GOV_VERIFY_COMPLIANCE_TOOL_ENABLED'
 ) == 'true'
+FEATURE_OFFICER_CACHE_ENABLED = os.getenv(
+    'FEATURE_OFFICER_CACHE_ENABLED'
+) == 'true'
+
+# eligibility check fuzzy matching
+FUZZY_MATCH_MINIMUM_FIRST_NAME_SCORE = os.getenv(
+    'FUZZY_MATCH_MINIMUM_FIRST_NAME_SCORE', 50
+)
+FUZZY_MATCH_MINIMUM_SURNAME_SCORE = os.getenv(
+    'FUZZY_MATCH_MINIMUM_FIRST_NAME_SCORE', 90
+)
+
+# API client
+API_CLIENT_BASE_URL = os.environ['API_CLIENT_BASE_URL']
+API_SIGNATURE_SECRET = os.environ['API_SIGNATURE_SECRET']

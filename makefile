@@ -8,7 +8,7 @@ test_requirements:
 	pip install -r requirements_test.txt
 
 FLAKE8 := flake8 . --exclude=migrations,.venv,node_modules
-PYTEST := pytest . -v --ignore=node_modules --cov=. --cov-config=.coveragerc --capture=no -x $(pytest_args)
+PYTEST := pytest . -v --ignore=node_modules --cov=. --cov-config=.coveragerc --capture=no $(pytest_args)
 COLLECT_STATIC := python manage.py collectstatic --noinput
 CODECOV := \
 	if [ "$$CODECOV_REPO_TOKEN" != "" ]; then \
@@ -65,9 +65,11 @@ DOCKER_SET_DEBUG_ENV_VARS := \
 	export DIRECTORY_UI_VERIFICATION_COMPLIANCE_TOOL_SET_TEST_DATA_URL=https://compliance-tool-reference.ida.digital.cabinet-office.gov.uk/service-test-data; \
 	export DIRECTORY_UI_VERIFICATION_FEATURE_GOV_VERIFY_COMPLIANCE_TOOL_ENABLED=true; \
 	export DIRECTORY_UI_VERIFICATION_VERIFY_SERVICE_PROVIDER_URL=http://localhost:50400; \
-	export DIRECTORY_UI_VERIFICATION_VERIFY_SERVICE_PROVIDER_SAML_SIGNING_KEY=debug
-
-
+	export DIRECTORY_UI_VERIFICATION_VERIFY_SERVICE_PROVIDER_SAML_SIGNING_KEY=debug; \
+	export DIRECTORY_UI_VERIFICATION_INTERNAL_CH_BASE_URL=http://localhost:8012; \
+	export DIRECTORY_UI_VERIFICATION_INTERNAL_CH_API_KEY=debug; \
+	export DIRECTORY_UI_VERIFICATION_API_SIGNATURE_SECRET=debug; \
+	export DIRECTORY_UI_VERIFICATION_API_CLIENT_BASE_URL=http://api.trade.great:8000
 
 
 docker_test_env_files:
@@ -138,18 +140,28 @@ DEBUG_SET_ENV_VARS := \
 	export COMPLIANCE_TOOL_SIGNING_CERTIFICATE=$$DIRECTORY_UI_VERIFICATION_COMPLIANCE_TOOL_SIGNING_CERTIFICATE; \
 	export COMPLIANCE_TOOL_ENCRYPTION_CERTIFICATE=$$DIRECTORY_UI_VERIFICATION_COMPLIANCE_TOOL_ENCRYPTION_CERTIFICATE; \
 	export COMPLIANCE_TOOL_MATCHING_SERVICE_SIGNING_PRIVATE_KEY=$$DIRECTORY_UI_VERIFICATION_COMPLIANCE_TOOL_MATCHING_SERVICE_SIGNING_PRIVATE_KEY; \
-	export COMPLIANCE_TOOL_MATCHING_SERVICE_ENTITY_ID=$$DIRECTORY_UI_VERIFICATION_COMPLIANCE_TOOL_MATCHING_SERVICE_ENTITY_ID; \
-	export FEATURE_GOV_VERIFY_COMPLIANCE_TOOL_ENABLED=true
+	export COMPLIANCE_TOOL_MATCHING_SERVICE_ENTITY_ID=http://verification.trade.great:8011/identity-verify/; \
+	export FEATURE_GOV_VERIFY_COMPLIANCE_TOOL_ENABLED=true; \
+	export INTERNAL_CH_BASE_URL=http://localhost:8012; \
+	export INTERNAL_CH_API_KEY=debug; \
+	export FEATURE_OFFICER_CACHE_ENABLED=true; \
+	export REDIS_CACHE_URL=redis://127.0.0.1:6379; \
+	export API_SIGNATURE_SECRET=debug; \
+	export API_CLIENT_BASE_URL=http://api.trade.great:8000
+
+
+TEST_SET_ENV_VARS := \
+	export FEATURE_OFFICER_CACHE_ENABLED=false
 
 
 debug_webserver:
 	$(DEBUG_SET_ENV_VARS) && $(DJANGO_WEBSERVER)
 
 debug_pytest:
-	$(DEBUG_SET_ENV_VARS) && $(COLLECT_STATIC) && $(PYTEST)
+	$(DEBUG_SET_ENV_VARS) && $(TEST_SET_ENV_VARS) && $(COLLECT_STATIC) && $(PYTEST)
 
 debug_test:
-	$(DEBUG_SET_ENV_VARS) && $(COLLECT_STATIC) && $(FLAKE8) && $(PYTEST) --cov-report=html
+	$(DEBUG_SET_ENV_VARS) && $(TEST_SET_ENV_VARS) && $(COLLECT_STATIC) && $(FLAKE8) && $(PYTEST) --cov-report=html
 
 debug_test_last_failed:
 	make debug_test pytest_args='-v --last-failed'
@@ -206,10 +218,10 @@ run_verify_serivce_provider:
 	cd ./verify-service-provider; \
 	VERIFY_ENVIRONMENT=COMPLIANCE_TOOL \
 	SERVICE_ENTITY_IDS='["http://verification.trade.great:8011/eligibility-check/"]' \
-	MSA_ENTITY_ID=$$DIRECTORY_UI_VERIFICATION_COMPLIANCE_TOOL_MATCHING_SERVICE_ENTITY_ID \
-	MSA_METADATA_URL=https://compliance-tool-reference.ida.digital.cabinet-office.gov.uk/SAML2/metadata/federation \
-	SAML_SIGNING_KEY=$$VERIFY_SERVICE_PROVIDER_SAML_SIGNING_KEY \
-	SAML_PRIMARY_ENCRYPTION_KEY=$$VERIFY_SERVICE_PROVIDER_SAML_PRIMARY_ENCRYPTION_KEY \
+	MSA_ENTITY_ID=http://verification.trade.great:8011/identity-verify/ \
+	MSA_METADATA_URL=http://localhost:8080/matching-service/SAML2/metadata \
+	SAML_SIGNING_KEY=$$DIRECTORY_UI_VERIFICATION_VERIFY_SERVICE_PROVIDER_SAML_SIGNING_KEY \
+	SAML_PRIMARY_ENCRYPTION_KEY=$$DIRECTORY_UI_VERIFICATION_VERIFY_SERVICE_PROVIDER_SAML_PRIMARY_ENCRYPTION_KEY \
 	./bin/verify-service-provider server verify-service-provider.yml
 
 run_matching_service_adapter:

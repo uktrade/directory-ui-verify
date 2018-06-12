@@ -6,6 +6,7 @@ from django.views.generic.base import RedirectView
 from django.urls import reverse
 
 from core import constants, helpers
+from sso.utils import SSOLoginRequiredMixin
 
 
 class LandingPageView(TemplateView):
@@ -29,7 +30,7 @@ class StaticViewSitemap(sitemaps.Sitemap):
         return reverse(item)
 
 
-class ComplianceTool(RedirectView):
+class ComplianceTool(SSOLoginRequiredMixin, RedirectView):
 
     def dispatch(self, *args, **kwargs):
         if not settings.FEATURE_GOV_VERIFY_COMPLIANCE_TOOL_ENABLED:

@@ -96,7 +96,11 @@ The MSA is a Java service that sits between gov verify hub and our Local Matchin
 
 Download and install it from [here](http://alphagov.github.io/rp-onboarding-tech-docs/pages/matching/matchingserviceadapter.html#msause), extract it to `./verify-matching-service-adapter`.
 
-To run it locally make sure you have generated the required certificates by running `make generate_matching_service_adapter_certificates` and then run
+To run it locally make sure you have generated the required certificates by running `make generate_matching_service_adapter_certificates`.
+
+Update the `test-config.yml`'s `matchingServiceAdapter.entityId` to `http://verification.trade.great:8011/identity-verify/` and `matchingServiceAdapter.externalUrl` to `http://verification.trade.great:8011/identity-verify/`
+
+Then run:
 
 `make run_matching_service_adapter`
 
@@ -122,7 +126,6 @@ Gov Verify provide a tool to trigger Verify hub to make requests to the service.
 - `DIRECTORY_UI_VERIFICATION_VERIFY_SERVICE_PROVIDER_SAML_SIGNING_KEY`: set to the value of make `openssl base64 -A -in ./verify-matching-service-adapter/test_primary_signing.pk8`
 - `DIRECTORY_UI_VERIFICATION_COMPLIANCE_TOOL_SIGNING_CERTIFICATE`: Set to the value of `./verify-matching-service-adapter/test_primary_signing.crt`, without the BEGIN and END headers, and with no carriage returns.
 - `DIRECTORY_UI_VERIFICATION_COMPLIANCE_TOOL_ENCRYPTION_CERTIFICATE`: Set to the value of `./verify-matching-service-adapter/test_msa_encryption_1.crt`, without the BEGIN and END headers, and with no carriage returns.
-- `DIRECTORY_UI_VERIFICATION_COMPLIANCE_TOOL_MATCHING_SERVICE_ENTITY_ID`: Set to the value of the integration environment entity id.
 
 Once that is done navigate to `http://verification.trade.great:8011/compliance-tool/` to be redirected to the suite of tests (click on the url of each test to begin the test.)
 

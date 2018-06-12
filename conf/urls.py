@@ -45,7 +45,8 @@ urlpatterns = [
 
     url(
         r'^eligibility-check/$',
-        eligibility.views.CheckIsCompanyDirectorView.as_view()
+        eligibility.views.CheckIsCompanyOfficerView.as_view(),
+        name='eligibility-check',
     ),
 
 
