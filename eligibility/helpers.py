@@ -102,9 +102,7 @@ class OfficerCollection(list):
         return self[0]
 
     def get(self):
-        if len(self) == 0:
-            raise MatchError('No matches')
-        elif len(self) > 1:
+        if len(self) > 1:
             raise MatchError('Multiple matches')
         else:
             return self.first()
@@ -167,7 +165,7 @@ def is_probably_company_officer(
             f'Scores: {first_name_score} {surname_score}'
         )
         csv_logger.info(
-            f'COMPANY_MATCH|{name}|{company_number}|'
-            '{first_name_score}|{surname_score}'
+            f'COMPANY_MATCH|{company_number}|{name}|{officer.name}|'
+            f'{first_name_score}|{surname_score}'
         )
         return True
