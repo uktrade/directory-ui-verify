@@ -145,6 +145,11 @@ class OfficerDataSource:
 def is_probably_company_officer(
     first_name, surname, birth_date, company_number
 ):
+    #  For use during verify demo. To be removed post-demo
+    if settings.FEATURE_FORCE_MATCH_ENABLED:
+        logger.warning('Force match enabled')
+        return company_number == settings.FORCE_MATCH_COMPANY_NUMBER
+
     officers = (
         OfficerDataSource
         .get_officers(company_number)

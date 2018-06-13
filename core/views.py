@@ -41,3 +41,4 @@ class ComplianceTool(SSOLoginRequiredMixin, RedirectView):
         request_id, url = helpers.generate_gov_verify_compliance_test_suite()
         self.request.session[constants.SAML_REQUEST_ID_KEY] = request_id
         return url
+        return helpers.get_create_account_level_two_compliance_test(url)

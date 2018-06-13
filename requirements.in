@@ -11,3 +11,4 @@ directory-components==1.8.2
 directory-api-client==9.16.0
 fuzzywuzzy==0.16.0
 directory-ch-client==0.2.0
+beautifulsoup4==4.6.0
