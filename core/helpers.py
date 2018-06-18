@@ -98,3 +98,14 @@ def configure_compliance_tool_response():
 
 def get_session_request_id(request):
     return request.session[constants.SAML_REQUEST_ID_KEY]
+
+
+def get_create_account_level_two_compliance_test(compliance_test_suite_url):
+    response = requests.get(compliance_test_suite_url)
+    response.raise_for_status()
+    matching_tests = [
+        item for item in response.json()['testCases']
+        if item['title'] == 'Account Creation Response with LEVEL_2'
+    ]
+    assert matching_tests, 'Cannot find account creation compliance test url'
+    return matching_tests[0]['executeUri']

@@ -1,21 +1,18 @@
-import datetime
-
 from requests.exceptions import HTTPError
 
 from django import forms
 
+from core.constants import ASSURANCE_LEVEL_TWO
 from core.helpers import decode_saml_response
+from eligibility import constants
 
 
-class CheckIsCompanyOfficerForm(forms.Form):
+class SAMLResponseForm(forms.Form):
     INVALID_SAML = 'Invalid SAML'
+    UNSUPPORTED_SCENARIO = 'This scenario is not supported'
+    UNSUPPORTED_LEVEL = 'This level is not supported'
 
     SAMLResponse = forms.CharField()
-
-    # these are extracted from SAMLResponse in `clean`
-    first_name = forms.CharField(required=False)
-    surname = forms.CharField(required=False)
-    birth_date = forms.DateField(required=False)
 
     def __init__(self, request_id, *args, **kwargs):
         self.request_id = request_id
@@ -25,22 +22,32 @@ class CheckIsCompanyOfficerForm(forms.Form):
         try:
             message = decode_saml_response(
                 saml=self.cleaned_data['SAMLResponse'],
-                request_id=self.request_id
+                request_id=self.request_id,
             )
         except HTTPError:
             raise forms.ValidationError(self.INVALID_SAML)
         else:
-            return message
+            if message['scenario'] != constants.ACCOUNT_CREATION:
+                raise forms.ValidationError(self.UNSUPPORTED_SCENARIO)
+            if message['levelOfAssurance'] != ASSURANCE_LEVEL_TWO:
+                raise forms.ValidationError(self.UNSUPPORTED_LEVEL)
+        return message
 
-    def clean(self):
-        cleaned_data = super().clean()
-        if 'SAMLResponse' in cleaned_data:
-            attributes = cleaned_data['SAMLResponse']['attributes']
-            cleaned_data.update({
-                'first_name': attributes['firstName']['value'],
-                'surname': attributes['surname']['value'],
-                'birth_date': datetime.datetime.strptime(
-                    attributes['dateOfBirth']['value'], '%Y-%m-%d'
-                ),
-            })
-        return cleaned_data
+    def get_user_attributes(self):
+        assert 'SAMLResponse' in self.cleaned_data
+        message = self.cleaned_data['SAMLResponse']
+        form = CheckIsCompanyOfficerForm(data={
+            'first_name': message['attributes']['firstName']['value'],
+            'surname': message['attributes']['surname']['value'],
+            'birth_date': message['attributes']['dateOfBirth']['value'],
+            'pid': message['pid'],
+        })
+        assert form.is_valid()
+        return form.cleaned_data
+
+
+class CheckIsCompanyOfficerForm(forms.Form):
+    first_name = forms.CharField()
+    surname = forms.CharField()
+    birth_date = forms.DateField()
+    pid = forms.CharField()

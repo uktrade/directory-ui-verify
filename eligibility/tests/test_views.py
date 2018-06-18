@@ -1,12 +1,13 @@
-from datetime import datetime
-from unittest.mock import call, Mock, patch
+from datetime import date
+from unittest.mock import call, Mock, patch, PropertyMock
 
 import pytest
 from requests.exceptions import HTTPError
 
 from django.urls import reverse
 
-from eligibility import views
+from core.constants import ASSURANCE_LEVEL_TWO
+from eligibility import constants, views
 from sso.utils import SSOUser
 
 
@@ -43,10 +44,10 @@ def mock_get_session_request_id():
 
 
 @pytest.fixture(autouse=True)
-def mock_get_company_details():
+def mock_company_details():
     stub = patch(
-        'eligibility.views.CheckIsCompanyOfficerView.get_company_details',
-        Mock(return_value={'number': '12345678'})
+        'eligibility.views.CheckIsCompanyOfficerView.company_details',
+        PropertyMock(return_value={'number': '12345678'})
     )
     stub.start()
     yield stub
@@ -94,17 +95,23 @@ def test_is_company_officer_invalid_saml(logged_in_client):
     )
 
 
-@pytest.mark.parametrize('is_probably_company_officer,expected_template', (
-    (False, views.CheckIsCompanyOfficerView.failure_template_name),
-    (True, views.CheckIsCompanyOfficerView.success_template_name),
-))
+@pytest.mark.parametrize(
+    'is_probably_company_officer,expected_template,call_count',
+    (
+        (False, views.CheckIsCompanyOfficerView.failure_template_name, 2),
+        (True, views.CheckIsCompanyOfficerView.success_template_name, 1),
+    )
+)
 @patch('eligibility.helpers.is_probably_company_officer')
 @patch('eligibility.forms.decode_saml_response')
 def test_is_company_officer_valid_body_not_officer(
-    mock_decode_saml_response, mock_is_probably_company_officer,
+    mock_decode_saml_response, mock_is_probably_company_officer, call_count,
     logged_in_client, is_probably_company_officer, expected_template
 ):
     mock_decode_saml_response.return_value = {
+        'scenario': constants.ACCOUNT_CREATION,
+        'levelOfAssurance': ASSURANCE_LEVEL_TWO,
+        'pid': '123',
         'attributes':  {
             'firstName': {'value': 'Jim'},
             'surname': {'value': 'Example'},
@@ -116,7 +123,7 @@ def test_is_company_officer_valid_body_not_officer(
     url = reverse('eligibility-check')
     response = logged_in_client.post(url, {'SAMLResponse': '123'})
 
-    assert mock_decode_saml_response.call_count == 1
+    assert mock_decode_saml_response.call_count == call_count
     assert mock_decode_saml_response.call_args == call(
         saml='123', request_id='789'
     )
@@ -125,7 +132,7 @@ def test_is_company_officer_valid_body_not_officer(
     assert mock_is_probably_company_officer.call_args == call(
         first_name='Jim',
         surname='Example',
-        birth_date=datetime(1908, 5, 27),
+        birth_date=date(1908, 5, 27),
         company_number='12345678',
     )
 

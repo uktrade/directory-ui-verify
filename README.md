@@ -1,9 +1,9 @@
-# directory-ui-verification
+# directory-ui-verify
 
 [![circle-ci-image]][circle-ci]
 [![codecov-image]][codecov]
 
-**Verification - the Department for International Trade (DIT)**  
+**Gov Verify wrapper for the Department for International Trade (DIT)**  
 
 ---
 ### See also:
@@ -51,8 +51,8 @@ This requires all host environment variables to be set.
 ## Running locally without Docker
 
 ### Installing
-    $ git clone https://github.com/uktrade/directory-ui-verification
-    $ cd directory-ui-verification
+    $ git clone https://github.com/uktrade/directory-ui-verify
+    $ cd directory-ui-verify
     $ virtualenv .venv -p python3.5
     $ source .venv/bin/activate
     $ pip install -r requirements_test.txt
@@ -80,9 +80,9 @@ To make sso work locally add the following to your machine's `/etc/hosts`:
 | 127.0.0.1 | api.trade.great      |
 | 127.0.0.1 | profile.trade.great  |
 | 127.0.0.1 | exred.trade.great    |
-| 127.0.0.1 | verification.trade.great    |
+| 127.0.0.1 | verify.trade.great    |
 
-Then log into `directory-sso` via `sso.trade.great:8001`, and use `directory-ui-verification` on `verification.trade.great:8011`
+Then log into `directory-sso` via `sso.trade.great:8001`, and use `directory-ui-verify` on `verification.trade.great:8011`
 
 Note in production, the `directory-sso` session cookie is shared with all subdomains that are on the same parent domain as `directory-sso`. However in development we cannot share cookies between subdomains using `localhost` - that would be like trying to set a cookie for `.com`, which is not supported by any RFC.
 
